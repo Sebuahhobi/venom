@@ -58,6 +58,7 @@ import * as puppeteer from 'puppeteer';
 import * as qrcode from 'qrcode-terminal';
 import { from, merge } from 'rxjs';
 import { take } from 'rxjs/operators';
+import { existsSync, readFileSync } from 'fs';
 
 /**
  * Validates if client is authenticated
@@ -135,4 +136,45 @@ async function decodeQR(
 
     return { code: code.data, data: canvas.toDataURL() };
   });
+}
+
+export async function auth_InjectToken(page: puppeteer.Page, session: string) {
+  //Auth with token ->start<-
+  const pathToken: string = path.join(
+    path.resolve(process.cwd(), 'tokens'),
+    `${session}.data.json`
+  );
+
+  let jsonToken: any;
+
+  if (existsSync(pathToken)) {
+    jsonToken = JSON.parse(readFileSync(pathToken).toString());
+
+    if (!jsonToken) return;
+
+    //if (jsonToken)
+    return await page.evaluateOnNewDocument((session) => {
+      localStorage.clear();
+      Object.keys(session).forEach((key) =>
+        localStorage.setItem(key, session[key])
+      );
+    }, jsonToken);
+  }
+  //End Auth with token
+
+  //return await page.evaluateOnNewDocument(() => {
+  // localStorage.setItem('WABrowserId', '"5AXJMPZneACe3iMkbH40+w=="');
+  // localStorage.setItem(
+  //   'WASecretBundle',
+  //   '{"key":"iBZb0m3w6dMfpU9UwF9Tr6/ckNV1NxDqnuZA7De/KMM=","encKey":"KjvvH/np261TSPjoFCsaRitodt96TT7qecBK797Cc7c=","macKey":"iBZb0m3w6dMfpU9UwF9Tr6/ckNV1NxDqnuZA7De/KMM="}'
+  // );
+  // localStorage.setItem(
+  //   'WAToken1',
+  //   '"8qUJJ+jGYn5tgVnMk/wnOeTX2gZUzYED/R2nQHuz8Ek="'
+  // );
+  // localStorage.setItem(
+  //   'WAToken2',
+  //   '"1@9YlRlvFq4fFgrLe7DtvgHPC8TqTmFdDsUW3m/+uyyCSaUkzQbvJeIQ5RD0niIxWHGcN3/aiQ0J5PIg=="'
+  // );
+  //  });
 }

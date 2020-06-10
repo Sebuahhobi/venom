@@ -53,7 +53,7 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMNNNNMMNNNMMMMMMMMMMMMMMMMM
 MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 all copyright reservation for S2 Click, Inc
 */
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync, writeFileSync, mkdir } from 'fs';
 import latestVersion from 'latest-version';
 import { Page } from 'puppeteer';
 import { from, interval, timer } from 'rxjs';
@@ -66,6 +66,11 @@ import { initWhatsapp, injectApi } from './browser';
 import chalk = require('chalk');
 import boxen = require('boxen');
 import Spinnies = require('spinnies');
+import path = require('path');
+import {
+  tokenSession,
+  defaultTokenSession,
+} from '../config/tokenSession.config';
 const { version } = require('../../package.json');
 
 // Global
@@ -161,6 +166,47 @@ export async function create(
   spinnies.add(`${session}-inject`, { text: '🕷🕷🕷Injecting Sibionte...🕷🕷🕷' });
   waPage = await injectApi(waPage);
   spinnies.succeed(`${session}-inject`, { text: 'Starting With Success!' });
+
+  // Saving Token
+  spinnies.add(`${session}-inject`, { text: '🕷🕷🕷 Saving Token...  🕷🕷🕷' });
+  if (true) {
+    const localStorage = JSON.parse(
+      await waPage.evaluate(() => {
+        return JSON.stringify(window.localStorage);
+      })
+    );
+
+    let { WABrowserId, WASecretBundle, WAToken1, WAToken2 } = localStorage;
+
+    try {
+      mkdir(
+        path.join(path.resolve(process.cwd(), 'tokens')),
+        { recursive: true },
+        (err) => {
+          if (err) {
+            spinnies.fail(`${session}-inject`, {
+              text: '🕷🕷🕷 Failed to create folder tokens...  🕷🕷🕷',
+            });
+          }
+        }
+      );
+
+      writeFileSync(
+        path.join(
+          path.resolve(process.cwd(), 'tokens'),
+          `${session}.data.json`
+        ),
+        JSON.stringify({ WABrowserId, WASecretBundle, WAToken1, WAToken2 })
+      );
+      spinnies.succeed(`${session}-inject`, {
+        text: '🕷🕷🕷 Token saved successfully...  🕷🕷🕷',
+      });
+    } catch (error) {
+      spinnies.fail(`${session}-inject`, {
+        text: '🕷🕷🕷 Failed to save token...  🕷🕷🕷',
+      });
+    }
+  }
 
   if (mergedOptions.debug) {
     const debugURL = `http://localhost:${readFileSync(

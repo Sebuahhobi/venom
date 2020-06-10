@@ -61,10 +61,15 @@ import { CreateConfig } from '../config/create-config';
 import { puppeteerConfig } from '../config/puppeteer.config';
 import chalk = require('chalk');
 import StealthPlugin = require('puppeteer-extra-plugin-stealth');
+import { auth_InjectToken } from './auth';
 
 export async function initWhatsapp(session: string, options: CreateConfig) {
   const browser = await initBrowser(session, options);
   const waPage = await getWhatsappPage(browser);
+
+  // Auth with token
+  await auth_InjectToken(waPage, session);
+
   await waPage.setUserAgent(
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36'
   );
@@ -123,7 +128,7 @@ async function initBrowser(
     // headless: true,
     headless: options.headless,
     devtools: options.devtools,
-    userDataDir: path.join(process.cwd(), session),
+    //userDataDir: path.join(process.cwd(), session),
     args: options.browserArgs
       ? options.browserArgs
       : [...puppeteerConfig.chroniumArgs],
